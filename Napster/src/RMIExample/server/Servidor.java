@@ -13,6 +13,8 @@ public class Servidor {
 
         Registry reg = LocateRegistry.getRegistry();
         reg.bind("rmi://127.0.0.1/servicoHora", sh);
+        System.out.println("Servidor no ar");
+        
         
         
         
