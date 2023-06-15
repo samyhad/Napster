@@ -8,9 +8,6 @@ import java.io.OutputStream;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
-import javax.sound.midi.Soundbank;
-import javax.swing.text.StyledEditorKit;
-
 public class TCPClient {
     public static void main(String[] args) throws UnknownHostException, IOException {
         
