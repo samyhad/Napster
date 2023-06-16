@@ -9,8 +9,12 @@ import java.rmi.server.RemoteServer;
 import java.rmi.server.ServerNotActiveException;
 import java.util.ArrayList;
 import java.util.Scanner;
+import java.io.BufferedReader;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
@@ -24,11 +28,12 @@ public class Cliente {
     private static String path;
     private static Peer peer;
     public static IServico shc;
+    public static Socket s;
     
     public static void main(String[] args) throws Exception{
         
         // Criando um objeto Socket
-        Socket s = new Socket("127.0.0.1", 9000);
+        s = new Socket("127.0.0.1", 9000);
        
         // Obtendo o InetAddress associado ao Socket
         InetAddress address = s.getLocalAddress();
@@ -39,11 +44,12 @@ public class Cliente {
         Registry reg = LocateRegistry.getRegistry();
         shc = (IServico) reg.lookup("rmi://127.0.0.1/Napster");
 
+        path = null;
 
         menu();    
     }
 
-    public static void menu() throws RemoteException{
+    public static void menu() throws IOException{
         Scanner scanner = new Scanner(System.in);
         
         System.out.println("------------------ PEER ------------------");
@@ -52,7 +58,7 @@ public class Cliente {
         while(condicao == true){
             System.out.println("Qual a requisi\u00E7\u00E3o desejada? (apenas n\u00FAmero)");
             System.out.println("[0]: JOIN");
-            System.out.println("[1]: SEARCH - op\u00E7\u00E3o indispon\u00EDvel");
+            System.out.println("[1]: SEARCH");
             System.out.println("[2]: DOWNLOAD - op\u00E7\u00E3o indispon\u00EDvel");
             System.out.println("[3]: LEAVE - op\u00E7\u00E3o indispon\u00EDvel");
 
@@ -60,8 +66,8 @@ public class Cliente {
 
             if(input == 0){
                 try {
-                    scanner.nextLine();
-                    if (path.isEmpty()){
+                    if (path == null){
+                        scanner.nextLine();
                         System.out.println("Qual o nome do diretório que se encontra os seus arquivos?");
                         path = scanner.nextLine();
                     }
@@ -76,18 +82,41 @@ public class Cliente {
                 System.out.println("Qual o nome do arquivo que você deseja procurar?");
                 String arquivo = scanner.nextLine();
                 
-                if (path.isEmpty()){
+                searchRequest(arquivo);
+            }
+            else if(input == 2){
+                
+
+                scanner.nextLine();
+                System.out.println("Qual o nome do arquivo que você deseja procurar?");
+                String arquivo = scanner.nextLine();
+
+                scanner.nextLine();
+                System.out.println("Qual o IP do peer que tem esse arquivo?");
+                String ipStr = scanner.nextLine();
+                byte[] ipAddress = {
+                    (byte) Integer.parseInt(ipStr.substring(0, 2)), 
+                    (byte) Integer.parseInt(ipStr.substring(4, 6)), 
+                    (byte) ipStr.charAt(8), 
+                    (byte) ipStr.charAt(10)};
+                InetAddress ip = InetAddress.getByAddress(ipAddress);
+                
+                scanner.nextLine();
+                System.out.println("Qual a porta do peer que tem esse arquivo?");
+                int porta = scanner.nextInt();
+
+                Peer peer_pesquisa = new Peer(ipS, porta);
+                
+                if (path == null){
+                    path = scanner.nextLine();
                     System.out.println("Você quer salvar esse arquivo em qual diretório?");
                     path = scanner.nextLine();
                 }
                 
-                searchRequest(arquivo);
-            }
-            else if(input == 2){
-                System.out.println("Opção indisponível");
+                downloadRequest(arquivo, ipStr, porta);
             }
             else if(input == 3){
-                System.out.println("Opção indisponível");
+                s.close();
                 condicao = false;
             }
             else{
@@ -149,6 +178,19 @@ public class Cliente {
             }
         }
 
+    }
+
+    public static void downloadRequest(String arquivo, String ip, int porta) throws IOException{
+        // cria a cadeia de saída (escrita) de informações do socket
+        //Socket socket_download = new Socket(ip, porta);
+
+        // cria a cadeia de entrada (leitura) de informações do socket
+        //InputStreamReader is = new InputStreamReader(socket_download.getInputStream());
+        //BufferedReader reader = new BufferedReader(is);
+
+        //leitura do socket (recebimento de informaão do host remoto)
+        //String response = reader.readLine(); //código bloqueante - não passa dessa linha até finalizar ela
+        
     }
 
 }
