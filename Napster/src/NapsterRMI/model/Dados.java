@@ -1,4 +1,4 @@
-package RMIExample.model;
+package NapsterRMI.model;
 
 import java.io.Serializable;
 import java.util.ArrayList;

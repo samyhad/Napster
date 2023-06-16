@@ -1,5 +1,6 @@
 package NapsterRMI.model;
 
+import java.net.InetAddress;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
@@ -12,11 +13,10 @@ public class Servico extends UnicastRemoteObject implements IServico{
     }
 
     @Override
-    public String JOIN(String cliente, ArrayList<String> arquivos) throws RemoteException {
+    public String JOIN(InetAddress ip, int porta, ArrayList<String> arquivos) throws RemoteException {
         for (String arquivo : arquivos) {
-            map.put(arquivo, cliente);
+            map.put(arquivo, ip);
         }
-        
         return "JOIN_OK";
     }
     
