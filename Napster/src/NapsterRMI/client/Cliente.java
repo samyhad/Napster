@@ -16,6 +16,7 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 
 import NapsterRMI.model.IServico;
+import NapsterRMI.model.Peer;
 
 public class Cliente {
 
@@ -83,9 +84,10 @@ public class Cliente {
         // Obtendo o InetAddress associado ao Socket
         address = s.getLocalAddress();
         int porta = s.getLocalPort();
+        Peer p = new Peer(address, porta);
     
 
-        String r = shc.JOIN(address, porta, arquivos);
+        String r = shc.JOIN(p, arquivos);
         System.out.println(r);
         if(r.equals("JOIN_OK")){
             System.out.println(

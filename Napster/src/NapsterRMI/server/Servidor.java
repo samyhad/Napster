@@ -3,8 +3,6 @@ package NapsterRMI.server;
 import java.net.ServerSocket;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 import NapsterRMI.model.IServico;
 import NapsterRMI.model.Servico;
@@ -18,7 +16,7 @@ public class Servidor {
 
         Registry reg = LocateRegistry.getRegistry();
         reg.bind("rmi://127.0.0.1/Napster", sh);
-        System.out.println("Servidor no ar");
+        System.out.println("Servidor Napster no ar");
         
     }
 
