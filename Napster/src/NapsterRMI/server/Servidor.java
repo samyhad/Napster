@@ -10,7 +10,7 @@ import NapsterRMI.model.Servico;
 
 public class Servidor {
     public static void main(String[] args) throws Exception{
-        ServerSocket serverSocket = new ServerSocket(9000);
+        //ServerSocket serverSocket = new ServerSocket(9000);
         IServico sh =  new Servico();
         LocateRegistry.createRegistry(1099);
 
