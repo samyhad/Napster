@@ -223,9 +223,12 @@ public class Cliente {
         byte[] buffer = new byte[8192];
         int bytesRead;
         long totalBytesRead = 0;
+        float porc;
         while (totalBytesRead < fileSize && (bytesRead = dataInputStream.read(buffer)) != -1) {
             fileOutputStream.write(buffer, 0, bytesRead);
             totalBytesRead += bytesRead;
+            porc = 100*(totalBytesRead/fileSize);
+            System.out.println(porc+"% recebido");
         }
         
         String r = shc.UPDATE(arquivo, peer);
