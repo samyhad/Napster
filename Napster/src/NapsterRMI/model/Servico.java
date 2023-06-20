@@ -37,10 +37,8 @@ public class Servico extends UnicastRemoteObject implements IServico{
                 peerList.add(p);
                 map.put(arquivo, peerList);
             }
-
-            System.out.println("Peer ["+p.IP+"]:["+p.PORTA+"] adicionado com arquivos"+arquivos);
-
         }
+        System.out.println("Peer ["+p.IP+"]:["+p.PORTA+"] adicionado com arquivos "+arquivos);
         
         return "JOIN_OK";
     }
@@ -48,11 +46,11 @@ public class Servico extends UnicastRemoteObject implements IServico{
     @Override
     public ArrayList<Peer> SEARCH(String arquivoProcurado, Peer p) throws RemoteException {
 
-        System.out.println("Peer ["+p.IP+"]:["+p.PORTA+"] solicitou arquivo"+arquivoProcurado);
+        System.out.println("Peer ["+p.IP+"]:["+p.PORTA+"] solicitou arquivo "+arquivoProcurado);
 
         // Procurar o valor dentro do mapa
         ArrayList<Peer> resultado = map.get(arquivoProcurado);
-
+        
         return resultado;
     }
 

@@ -10,12 +10,18 @@ import java.rmi.server.ServerNotActiveException;
 import java.util.ArrayList;
 import java.util.Scanner;
 import java.io.BufferedReader;
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.net.InetAddress;
+import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
@@ -45,8 +51,19 @@ public class Cliente {
         shc = (IServico) reg.lookup("rmi://127.0.0.1/Napster");
 
         path = null;
-
-        menu();    
+        ThreadAtendimento th_atendimento = new ThreadAtendimento(porta);
+        th_atendimento.start();
+        
+        Thread th_menu = new Thread(() -> {
+            try {
+                menu();
+            } catch (IOException e) {
+                e.printStackTrace();
+            } 
+        });
+        th_menu.start();
+        
+        
     }
 
     public static void menu() throws IOException{
@@ -91,21 +108,12 @@ public class Cliente {
                 System.out.println("Qual o nome do arquivo que você deseja procurar?");
                 String arquivo = scanner.nextLine();
 
-                scanner.nextLine();
                 System.out.println("Qual o IP do peer que tem esse arquivo?");
                 String ipStr = scanner.nextLine();
-                byte[] ipAddress = {
-                    (byte) Integer.parseInt(ipStr.substring(0, 2)), 
-                    (byte) Integer.parseInt(ipStr.substring(4, 6)), 
-                    (byte) ipStr.charAt(8), 
-                    (byte) ipStr.charAt(10)};
-                InetAddress ip = InetAddress.getByAddress(ipAddress);
                 
-                scanner.nextLine();
                 System.out.println("Qual a porta do peer que tem esse arquivo?");
                 int porta = scanner.nextInt();
 
-                Peer peer_pesquisa = new Peer(ipS, porta);
                 
                 if (path == null){
                     path = scanner.nextLine();
@@ -169,7 +177,7 @@ public class Cliente {
 
         ArrayList<Peer> peers = shc.SEARCH(arquivo, peer);
         
-        if(peers.isEmpty()){
+        if(peers == null){
             System.out.println("Arquivo não foi encontrado");
         }else{
             System.out.println("peers com arquivo solicitado:");
@@ -180,17 +188,168 @@ public class Cliente {
 
     }
 
-    public static void downloadRequest(String arquivo, String ip, int porta) throws IOException{
+    public static void downloadRequest(String arquivo, String ipPeer, int portaPeer) throws IOException{
+        // Criando o socket - conexão TCP entre os dois Peers
+        Socket socket_download = new Socket(ipPeer, portaPeer);
+
         // cria a cadeia de saída (escrita) de informações do socket
-        //Socket socket_download = new Socket(ip, porta);
+        OutputStream os = s.getOutputStream();
+        DataOutputStream writer = new DataOutputStream(os);
+
+        // escrita no socket (envio de informação ao host remoto - 'servidor')
+        writer.writeBytes(arquivo + "\n");
 
         // cria a cadeia de entrada (leitura) de informações do socket
-        //InputStreamReader is = new InputStreamReader(socket_download.getInputStream());
-        //BufferedReader reader = new BufferedReader(is);
+        InputStreamReader is = new InputStreamReader(socket_download.getInputStream());
+        BufferedReader reader = new BufferedReader(is);
 
         //leitura do socket (recebimento de informaão do host remoto)
-        //String response = reader.readLine(); //código bloqueante - não passa dessa linha até finalizar ela
+        String response = reader.readLine(); //código bloqueante - não passa dessa linha até finalizar ela
+
+        System.out.println(response);
+    }
+
+    public static void receiveFile(String savePath, Socket socket) throws IOException{
+        DataInputStream dataInputStream = new DataInputStream(socket.getInputStream());
+        FileOutputStream fileOutputStream = new FileOutputStream(savePath);
+
+        // Recebe o nome do arquivo e o tamanho do cliente
+        String fileName = dataInputStream.readUTF();
+        long fileSize = dataInputStream.readLong();
+
+        // Recebe os dados do arquivo
+        byte[] buffer = new byte[8192];
+        int bytesRead;
+        long totalBytesRead = 0;
+        while (totalBytesRead < fileSize && (bytesRead = dataInputStream.read(buffer)) != -1) {
+            fileOutputStream.write(buffer, 0, bytesRead);
+            totalBytesRead += bytesRead;
+        }
         
+        System.out.println("Arquivo recebido com sucesso.");
+    }
+
+    public static class ThreadAtendimento extends Thread{
+
+        private int porta;
+
+
+        public ThreadAtendimento(int porta){
+            this.porta = porta;
+        }
+
+        public void sendFile(String filePath, Socket socket) throws IOException{
+
+            FileInputStream fileInputStream = new FileInputStream(filePath);
+            DataOutputStream dataOutputStream = new DataOutputStream(socket.getOutputStream());
+
+            File file = new File(filePath);
+            String fileName = file.getName();
+            long fileSize = file.length();
+            
+            // Envia o nome do arquivo e o tamanho para o servidor
+            dataOutputStream.writeUTF(fileName);
+            dataOutputStream.writeLong(fileSize);
+            
+            // Envia os dados do arquivo
+            byte[] buffer = new byte[8192];
+            int bytesRead;
+            while ((bytesRead = fileInputStream.read(buffer)) != -1) {
+                dataOutputStream.write(buffer, 0, bytesRead);
+            }
+            
+            System.out.println("Arquivo enviado com sucesso.");
+        }
+
+        public void run(){
+            try{
+                ServerSocket serverSocket = new ServerSocket(porta); // Porta do servidor
+                System.out.println("Aguardando conexão...");
+
+                Socket no = serverSocket.accept(); // Espera por uma conexão
+                System.out.println("Conexão estabelecida com o cliente.");
+
+                    InputStreamReader is =  new InputStreamReader(no.getInputStream());
+                    BufferedReader reader = new BufferedReader(is);
+                    String fileName = reader.readLine();
+                    boolean estaPresente = arquivos.contains(fileName);
+                    
+                    if (estaPresente) {
+
+                        OutputStream os = no.getOutputStream();
+                        DataOutputStream writer = new DataOutputStream(os);
+                        writer.writeBytes("Esse peer realmente possui esse arquivo" + '\n');
+
+
+                        /*FileOutputStream fileOutputStream = new FileOutputStream(path + fileName);
+                        byte[] buffer = new byte[1024];
+                        int bytesRead;
+                        while ((bytesRead = fileOutputStream.read(buffer)) != -1) {
+                            fileOutputStream.write(buffer, 0, bytesRead);
+                        }*/
+
+                    } else {
+                        OutputStream os = no.getOutputStream();
+                        DataOutputStream writer = new DataOutputStream(os);
+                        writer.writeBytes("Esse peer NÃO possui esse arquivo" + '\n');
+                    }
+
+                    //FileOutputStream fileOutputStream = new FileOutputStream(savePath);
+                    //BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
+
+                    //String message = reader.readLine();
+                    //System.out.println("Mensagem recebida: " + message);
+
+                    //FileInputStream fileInputStream = new FileInputStream(filePath);
+                    //OutputStream outputStream = socket.getOutputStream()) {
+
+                    //byte[] buffer = new byte[1024];
+                    //int bytesRead;
+                    //while ((bytesRead = fileInputStream.read(buffer)) != -1) {
+                        //outputStream.write(buffer, 0, bytesRead);
+                    //}
+
+
+                    /*InputStreamReader is =  new InputStreamReader(no.getInputStream());
+                    BufferedReader reader = new BufferedReader(is);
+
+                    FileInputStream fileInputStream = new FileInputStream(filePath);
+                    
+                    
+                    OutputStream os = no.getOutputStream();
+                    DataOutputStream writer = new DataOutputStream(os);
+                    
+                    String arquivo = reader.readLine();
+                    boolean estaPresente = arquivos.contains(arquivo);
+                    
+                    if (estaPresente) {
+                        writer.writeBytes("OK");
+                        String filePath = this.path + arquivo;
+                    } else {
+                        writer.writeBytes("NOK");
+                    }
+
+                    FileInputStream fileInputStream = new FileInputStream(filePath);
+                    OutputStream outputStream = socket.getOutputStream()) {
+
+                    byte[] buffer = new byte[1024];
+                    int bytesRead;
+                    while ((bytesRead = fileInputStream.read(buffer)) != -1) {
+                        outputStream.write(buffer, 0, bytesRead);
+                    }*/
+
+
+
+                    // Fechando conexões
+                    //in.close();
+                    //out.close();
+                    //clientSocket.close();
+                
+            }catch(Exception e){
+                //
+            }
+
+        }
     }
 
 }
