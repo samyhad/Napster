@@ -203,14 +203,17 @@ public class Cliente {
 
         //System.out.println(response);
 
-        //recebe arquivo enviado pelo sevidor
-        String savePath = path + '\\' + arquivo;
-        receiveFile(savePath, socket_download);
+        
+        receiveFile(arquivo, socket_download);
 
         socket_download.close();
     }
 
-    public static void receiveFile(String savePath, Socket socket) throws IOException{
+    public static void receiveFile(String arquivo, Socket socket) throws IOException{
+        //recebe arquivo enviado pelo sevidor
+        String savePath = path + '\\' + arquivo;
+
+        // cria a cadeia de entrada (leitura) de informações do socket
         DataInputStream dataInputStream = new DataInputStream(socket.getInputStream());
         FileOutputStream fileOutputStream = new FileOutputStream(savePath);
 
@@ -225,7 +228,11 @@ public class Cliente {
             totalBytesRead += bytesRead;
         }
         
-        System.out.println("Arquivo recebido com sucesso.");
+        String r = shc.UPDATE(arquivo, peer);
+        if(r.equals("UPDATE_OK")){
+            System.out.println("Arquivo recebido com sucesso.");
+        }
+        
     }
 
     
@@ -254,8 +261,6 @@ public class Cliente {
             
             System.out.println("Arquivo enviado com sucesso.");
 
-            //fileInputStream.close();
-            //dataOutputStream.close();
         }
         
         public void run(){
@@ -281,11 +286,6 @@ public class Cliente {
                 
                 if (estaPresente) {
 
-                    //OutputStream os = no.getOutputStream();
-                    //DataOutputStream writer = new DataOutputStream(os);
-                    //writer.writeBytes("Esse peer realmente possui esse arquivo" + '\n');
-
-                    //arquivo a ser enviado
                     String filePath = path + '\\' + fileName;
                     sendFile(filePath, no);
 

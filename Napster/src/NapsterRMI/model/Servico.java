@@ -58,18 +58,18 @@ public class Servico extends UnicastRemoteObject implements IServico{
     public String UPDATE(String arquivo, Peer p) throws RemoteException {
 
         //Verificar se esse arquivo já existe no nosso SD ou não
-            ArrayList<Peer> valor = map.get(arquivo);
+        ArrayList<Peer> valor = map.get(arquivo);
 
-            // Verificando se a chave existe, 
-            //se existir apenas adicionar um novo peer, c.c, add uma nova chave.
-            if (valor != null) {
-                valor.add(p);
-                map.put(arquivo, valor);
-            } else {
-                ArrayList<Peer> peerList = new ArrayList<>();
-                peerList.add(p);
-                map.put(arquivo, peerList);
-            }
+        // Verificando se a chave existe, 
+        //se existir apenas adicionar um novo peer, c.c, add uma nova chave.
+        if (valor != null) {
+            valor.add(p);
+            map.put(arquivo, valor);
+        } else {
+            ArrayList<Peer> peerList = new ArrayList<>();
+            peerList.add(p);
+            map.put(arquivo, peerList);
+        }
 
         return "UPDATE_OK";
     }
