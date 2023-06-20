@@ -253,6 +253,9 @@ public class Cliente {
             }
             
             System.out.println("Arquivo enviado com sucesso.");
+
+            //fileInputStream.close();
+            //dataOutputStream.close();
         }
         
         public void run(){
@@ -284,7 +287,7 @@ public class Cliente {
 
                     //arquivo a ser enviado
                     String filePath = path + '\\' + fileName;
-                    receiveFile(filePath, no);
+                    sendFile(filePath, no);
 
                 } else {
                     //OutputStream os = no.getOutputStream();
