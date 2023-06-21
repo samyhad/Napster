@@ -29,41 +29,41 @@ public class Cliente {
     private static String path;
     private static Peer peer;
     public static IServico shc;
+    public static String searchFile;
+    public static Scanner scanner;
     //public static Socket s;
     
     public static void main(String[] args) throws Exception{
         
-        // Criando um objeto Socket
-        //s = new Socket("127.0.0.1", 9000);
-        //s.setReuseAddress(true);
-       
-        // Obtendo o InetAddress associado ao Socket
-        //InetAddress address = s.getLocalAddress();
-        //int porta = s.getLocalPort();
-        //peer = new Peer(address, porta);
+        scanner = new Scanner(System.in);
 
         //criando conexão RMI
         Registry reg = LocateRegistry.getRegistry();
         shc = (IServico) reg.lookup("rmi://127.0.0.1/Napster");
 
         path = null;
-        ThreadAtendimento th_atendimento = new ThreadAtendimento();
+
+        System.out.println("Qual o IP desse peer?");
+        String address_str = scanner.nextLine();
+        System.out.println("Qual a porta desse peer?");
+        int porta = scanner.nextInt();
+        
+        ThreadAtendimento th_atendimento = new ThreadAtendimento(address_str, porta);
         th_atendimento.start();
         
-        Thread th_menu = new Thread(() -> {
+        /*Thread th_menu = new Thread(() -> {
             try {
                 menu();
             } catch (IOException e) {
                 e.printStackTrace();
             } 
         });
-        th_menu.start();
-        
+        th_menu.start();*/
+        menu();
         
     }
 
     public static void menu() throws IOException{
-        Scanner scanner = new Scanner(System.in);
         
         System.out.println("------------------ PEER ------------------");
         Boolean condicao = true;
@@ -72,8 +72,7 @@ public class Cliente {
             System.out.println("Qual a requisi\u00E7\u00E3o desejada? (apenas n\u00FAmero)");
             System.out.println("[0]: JOIN");
             System.out.println("[1]: SEARCH");
-            System.out.println("[2]: DOWNLOAD - op\u00E7\u00E3o indispon\u00EDvel");
-            System.out.println("[3]: LEAVE - op\u00E7\u00E3o indispon\u00EDvel");
+            System.out.println("[2]: DOWNLOAD");
 
             int input = scanner.nextInt();
 
@@ -128,7 +127,7 @@ public class Cliente {
 
         }
 
-        scanner.close();
+        //scanner.close();
         
     }
 
@@ -227,7 +226,7 @@ public class Cliente {
         while (totalBytesRead < fileSize && (bytesRead = dataInputStream.read(buffer)) != -1) {
             fileOutputStream.write(buffer, 0, bytesRead);
             totalBytesRead += bytesRead;
-            porc = 100*(totalBytesRead/fileSize);
+            porc = 100*((float) totalBytesRead/ (float)fileSize);
             System.out.println(porc+"% recebido");
         }
         
@@ -240,8 +239,11 @@ public class Cliente {
 
     
     public static class ThreadAtendimento extends Thread{
-
-        public ThreadAtendimento(){
+        public static String ip;
+        public static int porta;
+        public ThreadAtendimento(String ip, int porta){
+            this.ip = ip;
+            this.porta = porta;
         }
 
         public void sendFile(String filePath, Socket socket) throws IOException{
@@ -252,7 +254,7 @@ public class Cliente {
             File file = new File(filePath);
             long fileSize = file.length();
             
-            // Envia o amanho do arquivo para o servidor
+            // Envia o tamanho do arquivo para o servidor
             dataOutputStream.writeLong(fileSize);
             
             // Envia os dados do arquivo
@@ -268,36 +270,35 @@ public class Cliente {
         
         public void run(){
             try{
-                ServerSocket serverSocket = new ServerSocket(0);
-                int porta = serverSocket.getLocalPort();
+                ServerSocket serverSocket = new ServerSocket(porta);
+                //ServerSocket serverSocket = new ServerSocket(0);
+                //int porta = serverSocket.getLocalPort();
                 InetAddress address = serverSocket.getInetAddress();
                 System.out.println(serverSocket.getLocalSocketAddress());
                 
                 peer = new Peer(address, porta);
-                System.out.println("Servidor TCP iniciado na porta " + peer.PORTA);
-                System.out.println(serverSocket.getInetAddress());
                 
-                System.out.println("Aguardando conexão...");
-
                 Socket no = serverSocket.accept(); // Espera por uma conexão
-                System.out.println("Conexão estabelecida com o cliente.");
+                Thread th_accept = new Thread(() -> {
+                    try (InputStreamReader is = new InputStreamReader(no.getInputStream())) {
+                        BufferedReader reader = new BufferedReader(is);
+                        String fileName = reader.readLine();
+                        boolean estaPresente = arquivos.contains(fileName);
+                        
+                        if (estaPresente) {
 
-                InputStreamReader is =  new InputStreamReader(no.getInputStream());
-                BufferedReader reader = new BufferedReader(is);
-                String fileName = reader.readLine();
-                boolean estaPresente = arquivos.contains(fileName);
-                
-                if (estaPresente) {
+                            String filePath = path + '\\' + fileName;
+                            sendFile(filePath, no);
 
-                    String filePath = path + '\\' + fileName;
-                    sendFile(filePath, no);
+                        } else {
+                            System.out.println("Esse peer não possui o arquivo "+ fileName);
+                        }
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
 
-                } else {
-                    //OutputStream os = no.getOutputStream();
-                    //DataOutputStream writer = new DataOutputStream(os);
-                    //writer.writeBytes("Esse peer NÃO possui esse arquivo" + '\n');
-                }
-
+                });
+                th_accept.start();
             }catch(Exception e){
                 System.err.println(e);
             }
