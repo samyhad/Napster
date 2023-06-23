@@ -9,14 +9,6 @@ public class Servico extends UnicastRemoteObject implements IServico{
         super();
     }
 
-    /*@Override
-    public String JOIN(InetAddress ip, int porta, ArrayList<String> arquivos) throws RemoteException {
-        for (String arquivo : arquivos) {
-            map.put(arquivo, ip);
-        }
-        return "JOIN_OK";
-    }*/
-
     @Override
     public String JOIN(Peer p, ArrayList<String> arquivos) throws RemoteException {
         /*for (String arquivo : arquivos) {
